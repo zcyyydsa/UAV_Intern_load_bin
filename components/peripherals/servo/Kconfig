@@ -1,0 +1,3 @@
+menuconfig SERVO_ENABLED
+    bool "Enable Servo"
+    default y

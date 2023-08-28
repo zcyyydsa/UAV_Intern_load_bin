@@ -1,0 +1,3 @@
+menuconfig HGMEDIA_ENABLED
+    bool "Enable HGMEDIA"
+    default y

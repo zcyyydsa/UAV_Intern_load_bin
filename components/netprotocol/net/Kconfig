@@ -1,0 +1,4 @@
+menuconfig HGNET_ENABLED
+    bool "Enable HGNET"
+    default y
+

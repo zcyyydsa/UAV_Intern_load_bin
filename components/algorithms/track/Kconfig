@@ -1,0 +1,3 @@
+menuconfig HGTRACK_ENABLED
+    bool "Enable HGTRACK"
+    default y

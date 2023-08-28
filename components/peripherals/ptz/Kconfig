@@ -1,0 +1,3 @@
+menuconfig PTZ_ENABLED
+    bool "Enable PTZ"
+    default y

@@ -1,0 +1,3 @@
+menuconfig HGMUXER_ENABLED
+    bool "Enable mp4 muxer"
+    default y

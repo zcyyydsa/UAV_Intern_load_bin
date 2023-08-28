@@ -1,0 +1,3 @@
+menuconfig HGRTSP_ENABLED
+    bool "Enable HGRTSP"
+    default y

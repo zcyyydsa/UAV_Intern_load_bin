@@ -1,0 +1,3 @@
+menuconfig HGTOPIC_ENABLED
+    bool "Enable TOPIC"
+    default y

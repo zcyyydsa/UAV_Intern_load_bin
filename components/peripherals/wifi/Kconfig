@@ -1,0 +1,3 @@
+menuconfig WIFI_ENABLED
+    bool "Enable WIFI"
+    default y

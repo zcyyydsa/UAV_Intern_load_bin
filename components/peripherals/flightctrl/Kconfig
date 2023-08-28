@@ -1,0 +1,3 @@
+menuconfig FLIGHTCTL_ENABLED
+    bool "Enable FLIGHTCTL"
+    default y

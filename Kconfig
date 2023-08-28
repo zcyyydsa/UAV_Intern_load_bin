@@ -1,0 +1,22 @@
+
+mainmenu "C/CPP CMake project framework Kconfig configuration"
+
+menu "Toolchain configuration"
+	config TOOLCHAIN_PATH
+		string "toolchain path"
+		default "/opt/rk3399pro_host/bin"
+
+	config TOOLCHAIN_PREFIX
+		string "toolchain prefix"
+		default "aarch64-linux-"
+endmenu
+
+menu "Components configuration"
+	osource "${SDK_PATH}/components/algorithms/*/Kconfig"
+	osource "${SDK_PATH}/components/common/*/Kconfig"
+	osource "${SDK_PATH}/components/media/*/Kconfig"
+	osource "${SDK_PATH}/components/netprotocol/*/Kconfig"
+	osource "${SDK_PATH}/components/peripherals/*/Kconfig"
+	osource "${PROJECT_PATH}/../components/*/Kconfig"
+	osource "${PROJECT_PATH}/*/Kconfig"
+endmenu

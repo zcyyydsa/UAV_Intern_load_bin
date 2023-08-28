@@ -1,0 +1,4 @@
+menuconfig HGIPC_ENABLED
+    bool "Enable HGPIPC"
+    default y
+

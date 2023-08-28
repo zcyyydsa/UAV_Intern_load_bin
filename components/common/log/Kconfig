@@ -1,0 +1,3 @@
+menuconfig LOG_ENABLED
+    bool "Enable LOG"
+    default y

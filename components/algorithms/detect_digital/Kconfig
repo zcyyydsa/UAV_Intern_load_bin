@@ -1,0 +1,3 @@
+menuconfig DETECT_DIGITAL_ENABLED
+    bool "Enable HGDETECT_DIGITAL"
+    default y

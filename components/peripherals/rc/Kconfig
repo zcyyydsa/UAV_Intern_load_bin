@@ -1,0 +1,3 @@
+menuconfig RC_ENABLED
+    bool "Enable RC"
+    default y
