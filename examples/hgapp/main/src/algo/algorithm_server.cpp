@@ -340,13 +340,15 @@ void AlgorithmServer::TrackThread()
             }
         }
         #endif
-        //go to start point
-        if(s_state==START_SWARM_TRACK){
+        // 如果是初始状态，就去到起飞点
+        if(s_state==START_SWARM_TRACK)
+        {
             std::lock_guard<std::mutex> slock(mpSD->mMutexSTD);
             s_state=GOTO_START_POINT;
             mTimeStart=mpSD->GetTimeMs();
             mTimeStartDelay=float(mpSD->mMavId)*10*1000;
         }
+        // 如果是运行过程中输入去到起飞点状态，就去到起飞点
         if(s_state==GOTO_START_POINT){
             LockTrackCloudPitch();
             if(0==GotoNavPoint()){
@@ -359,65 +361,86 @@ void AlgorithmServer::TrackThread()
         }  
         
         //detect
-        if(0==ret && s_state==SWARM_TRACKING && TrackStatusCheck()==0){
+        if(0==ret && s_state==SWARM_TRACKING && TrackStatusCheck()==0)
+        {
             printf("mTrackStatus %d\n",mTrackStatus);
             #if !TEST_TRACK_USE_CLOUD
             LockTrackCloudPitch();
             #endif
             mMarkers.clear();
-            if(mTrackStatus!=EXCHANGE_TARGET){
+            if(mTrackStatus!=EXCHANGE_TARGET)
+            {
                 mpDDigital->DetectDigital(mImBGR,mMarkers);
             }
             marker_num=mMarkers.size();
-            if(marker_num>0){
-                if(mpSD->mMavId==mpSD->mMavPadId && mMarkers.at(0).id==1&&mTrackStatus!=EXCHANGE_TARGET){
+            if(marker_num>0)
+            {
+                if(mpSD->mMavId==mpSD->mMavPadId && mMarkers.at(0).id==1&&mTrackStatus!=EXCHANGE_TARGET)
+                {
                     mTrackStatus=EXCHANGE_TARGET;
-                    mTrackVehicleId=1-mTrackVehicleId;//
+                    mTrackVehicleId=1-mTrackVehicleId;
+                    /*如果有检测到标记物，并且当前无人机的 ID 与无人机板载 ID 相等，同时第一个检测到的标记物的 ID 为 1，
+                    且当前跟踪状态不是 EXCHANGE_TARGET，则执行以下操作：
+                    将跟踪状态 mTrackStatus 设置为 EXCHANGE_TARGET，表示要切换跟踪目标。
+                    切换 mTrackVehicleId 的值，可能是用来表示跟踪的目标车辆的标识。*/
                 }
                 // printf("mMavId:%d, mMavPadId:%d, mTrackVehicleId:%d\n",mpSD->mMavId,mpSD->mMavPadId,mTrackVehicleId);
             }
-            if(mTrackStatus==EXCHANGE_TARGET){
+            if(mTrackStatus==EXCHANGE_TARGET)
+            {
                 //pad mav go to target vehicle
-                if(0==GotoTargetVehicle()){
+                if(0==GotoTargetVehicle())
+                {
                     mTrackStatus=TRACK_INIT;
                 }
-                else{
+                else
+                {
                     usleep(1000*30);
                     continue;
                 }
             }
             // track
-            if(marker_num>0){
-                if(mTrackStatus!=TRACK_RUNNING){
+            if(marker_num>0)
+            {
+                if(mTrackStatus!=TRACK_RUNNING)
+                {
                     mTimeLastTrack=mpSD->GetTimeMs();
                     mLastSpeed=0;
                 }
                 mTrackStatus=TRACK_RUNNING;
                 mTrackRect=boundingRect(mMarkers.at(0).points);
                 mpTrack->extinit(mTrackRect.x, mTrackRect.y, mTrackRect.width, mTrackRect.height, im_swarm, IMAGE_WIDTH, IMAGE_HEIGHT);
+                // 根据检测到的第一个标记物的位置和大小，初始化跟踪矩形，并使用该矩形初始化跟踪器。
                 mRectIsNew=1;
                 track_cnt=0;
+                // 将跟踪矩形的信息设置为新的，跟踪计数器归零。
             }
-            else{
+            else
+            {
                 track_cnt++;
-                if(mTrackStatus==TRACK_RUNNING){
+                if(mTrackStatus==TRACK_RUNNING)
+                {
                     int x=0, y=0, w=0, h=0;
                     mpTrack->extupdate(im_swarm, IMAGE_WIDTH, IMAGE_HEIGHT, x, y, w, h);
+                    // 更新跟踪目标，输出跟踪框坐标位置
                     printf("x:%d, y:%d, w:%d,h:%d\n",x,y,w,h);
-                    if(-1==mpSD->GetMavHeight(mav_height)){
+                    if(-1==mpSD->GetMavHeight(mav_height))
+                    {
                         mRectIsNew=0;
                         mTrackStatus=TRACK_LOST;
                     }
                     double t_size=CAMERA_FOCAL_LEN_X*MARKER_SIZE/mav_height;
                     double max0=max(w,h);
-                    if(x>7&&y>7&&x+w<IMAGE_WIDTH-7&&y+h<IMAGE_HEIGHT-7&&max0<t_size*2.5&&max0>t_size/1.5){
+                    if(x>7&&y>7&&x+w<IMAGE_WIDTH-7&&y+h<IMAGE_HEIGHT-7&&max0<t_size*2.5&&max0>t_size/1.5)
+                    {
                         mRectIsNew=1;
                         mTrackRect.x=x;
                         mTrackRect.y=y;
                         mTrackRect.width=w;
                         mTrackRect.height=h;
                     }
-                    else{
+                    else
+                    {
                         mRectIsNew=0;
                         mTrackStatus=TRACK_LOST;
                     }
@@ -425,9 +448,11 @@ void AlgorithmServer::TrackThread()
             }
         }
         //send data to control mav
-        if(mRectIsNew==1){
-            mRectIsNew=0;
-            if(track_cnt<30){
+        if(mRectIsNew==1)
+        {
+            mRectIsNew=0; // 已处理新的跟踪矩形信息
+            if(track_cnt<30)
+            {
                 CtlMavToTrack();
             }
             //draw rect in test mode,should define TRACK_DEBUG
@@ -441,7 +466,6 @@ void AlgorithmServer::TrackThread()
             //send vehicle pos to app
             SendTrackResultToApp();
         }
-
     }
 }
 
@@ -493,82 +517,89 @@ void AlgorithmServer::CtlCloudPitchByPos(float pitch)
 
 void AlgorithmServer::CtlMavToTrack()
 {
-    float height=1.0;
-    float mav_yaw=0.0;
-    if(-1==mpSD->GetMavHeight(height)||-1==mpSD->GetMavYaw(mav_yaw)){
+    float height = 1.0;
+    float mav_yaw = 0.0;
+    if (-1 == mpSD->GetMavHeight(height) || -1 == mpSD->GetMavYaw(mav_yaw)) // 获取无人机的高度和偏航角
+    {
         // HGLOG_INFO("Get height and yaw failed,cancel current frame CtlMavToTrack!");
         printf("Get height and yaw failed,cancel current frame CtlMavToTrack!");
         return;
     }
-    if(height>MAX_MAV_HEIGHT){
-        HGLOG_INFO("Height {} is bigger than MAX_MAV_HEIGHT 4.0!",height);
-        height=MAX_MAV_HEIGHT;
+    if (height > MAX_MAV_HEIGHT) // 限制无人机的最大高度
+    {
+        HGLOG_INFO("Height {} is bigger than MAX_MAV_HEIGHT 4.0!", height);
+        height = MAX_MAV_HEIGHT;
     }
-    printf("CtlMavToTrack h:%f, yaw:%f\n",height,mav_yaw);
-    Point2f pt(mTrackRect.x+mTrackRect.width/2,mTrackRect.y+mTrackRect.height/2);
-    Point2f im_cen(IMAGE_WIDTH/2,IMAGE_HEIGHT/2);
-    float dx=atan((pt.x-im_cen.x)/CAMERA_FOCAL_LEN_X);//dx is a angle
-    float dy=-atan((pt.y-im_cen.y)/CAMERA_FOCAL_LEN_Y);//dy is a angle
-    #if TEST_TRACK_USE_CLOUD
-    printf("compensate pitch is %f\n",dy);
-    CtlCloudPitchByPos(dy);
-    #endif
-    //change coordinate to mav coor
-    float x,y,z,yaw;
-    if(mCloudPitch!=0&&mCloudPitch+dy!=0){
-        x=height/tan(mCloudPitch)-height/tan(mCloudPitch+dy);
+    printf("CtlMavToTrack h:%f, yaw:%f\n", height, mav_yaw);                               // 打印无人机的高度和偏航角
+    Point2f pt(mTrackRect.x + mTrackRect.width / 2, mTrackRect.y + mTrackRect.height / 2); // 获取跟踪矩形的中心点
+    Point2f im_cen(IMAGE_WIDTH / 2, IMAGE_HEIGHT / 2);                                     // 获取图像的中心点
+    float dx = atan((pt.x - im_cen.x) / CAMERA_FOCAL_LEN_X);                               // 计算跟踪矩形中心点与图像中心点的水平偏移角
+    float dy = -atan((pt.y - im_cen.y) / CAMERA_FOCAL_LEN_Y);                              // 计算跟踪矩形中心点与图像中心点的垂直偏移角
+#if TEST_TRACK_USE_CLOUD
+    printf("compensate pitch is %f\n", dy);
+    CtlCloudPitchByPos(dy); // 调用 CtlCloudPitchByPos(dy) 进行云台俯仰角的调整。
+#endif
+    // change coordinate to mav coor
+    float x, y, z, yaw;
+    if (mCloudPitch != 0 && mCloudPitch + dy != 0) // 计算在无人机坐标系下的 x、y 和 z 位移
+    {
+        x = height / tan(mCloudPitch) - height / tan(mCloudPitch + dy);
     }
-    else{
-        x=0;
+    else
+    {
+        x = 0;
     }
-    x=max(-TRACK_MAX_MOVE,min(TRACK_MAX_MOVE,x));
-    y=height*tan(dx);
-    y=max(-TRACK_MAX_MOVE,min(TRACK_MAX_MOVE,y));
-    //lock height to mTrackHeight
-    if(abs(mTrackHeight-height)>0.4){
-        z=-(mTrackHeight-height);
+    x = max(-TRACK_MAX_MOVE, min(TRACK_MAX_MOVE, x));
+    y = height * tan(dx);
+    y = max(-TRACK_MAX_MOVE, min(TRACK_MAX_MOVE, y)); // 限制 x 和 y 的最大值
+    if (abs(mTrackHeight - height) > 0.4)
+    {
+        z = -(mTrackHeight - height); // 如果无人机的高度与目标高度差值超过 0.4，将 z 位移设置为高度差，否则置为 0，表示无人机不需要调整高度。
     }
-    else{
-        z=0;
+    else
+    {
+        z = 0;
     }
-    float x0=cos(mTrackYaw-mav_yaw);
-    float y0=sin(mTrackYaw-mav_yaw);
+    float x0 = cos(mTrackYaw - mav_yaw);
+    float y0 = sin(mTrackYaw - mav_yaw);
     float t_angle;
-    
-    t_angle=atan2(y0,x0);
-
-    if(abs(t_angle)>5.0/57.3){
-        yaw=t_angle;
+    t_angle = atan2(y0, x0);       // 计算旋转角度 t_angle，用于调整无人机的偏航角。这里的计算是将无人机的当前偏航角与目标偏航角的差值。
+    if (abs(t_angle) > 5.0 / 57.3) // 如果旋转角度的绝对值大于 5 度（以弧度为单位），将角度差作为目标偏航角，否则将偏航角置为 0,表示无人机不需要调整偏航角。
+    {
+        yaw = t_angle;
     }
-    else{
-        yaw=0;
+    else
+    {
+        yaw = 0;
     }
-    #if TEST_SINGLE_MAV_TRACK
-    yaw=0;
-    #endif
-    float len=min(TRACK_MAX_MOVE,sqrt(x*x+y*y));
-
-    float speed_t=max(30.0f,len/TRACK_MAX_MOVE*60.0f); 
-    uint16_t speed=mLastSpeed;
-    if(speed_t-mLastSpeed>20){
-        speed=mLastSpeed+20;
+#if TEST_SINGLE_MAV_TRACK
+    yaw = 0;
+#endif
+    float len = min(TRACK_MAX_MOVE, sqrt(x * x + y * y));     // 计算位移的模长，即无人机应该飞行的距离，将其限制在 TRACK_MAX_MOVE 范围内。
+    float speed_t = max(30.0f, len / TRACK_MAX_MOVE * 60.0f); // 计算无人机的速度，将其限制在 30-60 之间。
+    uint16_t speed = mLastSpeed;
+    if (speed_t - mLastSpeed > 20)
+    {
+        speed = mLastSpeed + 20;
     }
-    else if(speed_t-mLastSpeed<-20){
-        speed=mLastSpeed-20;
+    else if (speed_t - mLastSpeed < -20)
+    {
+        speed = mLastSpeed - 20;
     }
-    else{
-        speed=speed_t;
+    else
+    {
+        speed = speed_t;
     }
-
-    printf("x:%f, y:%f, z:%f, yaw:%f,speed %d\n",x,y,z,yaw,speed);
-    SendResultControlMav(20,x,y,z,yaw,speed);
-    mLastSpeed=speed;
+    printf("x:%f, y:%f, z:%f, yaw:%f,speed %d\n", x, y, z, yaw, speed); // 打印输出位移和角度信息，以及计算出的速度
+    SendResultControlMav(20, x, y, z, yaw, speed);                      // 调用函数，将计算出的位移和角度信息发送给无人机。
+    mLastSpeed = speed;                                                 // 记录最后的速度值。这个速度值会在下一次调用函数时使用。
 }
 
 void AlgorithmServer::LockTrackCloudPitch()
 {
-    if(abs(mCloudPitch-mTrackCloudPitch)>0.5/57.3){
-        CtlCloudPitchByPos(mTrackCloudPitch-mCloudPitch);
+    if (abs(mCloudPitch - mTrackCloudPitch) > 0.5 / 57.3)
+    {
+        CtlCloudPitchByPos(mTrackCloudPitch - mCloudPitch); // 传入参数为目标俯仰角与当前俯仰角之差，以实现调整云台俯仰角的操作。
     }
 }
 
@@ -589,47 +620,53 @@ int AlgorithmServer::TrackStatusCheck()
 
 int AlgorithmServer::MavChangeTrackTarget()
 {
-    mTrackStatus=EXCHANGE_TARGET;
-    return 0;//TODO:code not done
+    mTrackStatus = EXCHANGE_TARGET;
+    return 0; // TODO:code not done
 }
 
-//ret 0 already go to target position
 int AlgorithmServer::GotoTargetVehicle()
 {
-    double ts=mpSD->GetTimeMs();
-    Vec6d vehicle(0,0,0,0,0,0);
-    if(0!=mpSD->GetVehiclePos(vehicle,mTrackVehicleId)){
+    double ts = mpSD->GetTimeMs();
+    Vec6d vehicle(0, 0, 0, 0, 0, 0);
+    if (0 != mpSD->GetVehiclePos(vehicle, mTrackVehicleId)) // 获取目标车辆的位置信息
+    {
         return -1;
     }
-    printf("GotoTargetVehicle %f    %f,  mTrackVehicleId:%d,vehicle(%f,%f)\n",vehicle[4],ts,mTrackVehicleId,vehicle[0],vehicle[1]);
-    if(vehicle[0]!=0||vehicle[1]!=0)//ms  abs(vehicle[4]-ts)<1500&&
+    printf("GotoTargetVehicle %f    %f,  mTrackVehicleId:%d,vehicle(%f,%f)\n", vehicle[4], ts, mTrackVehicleId, vehicle[0], vehicle[1]);
+    if (vehicle[0] != 0 || vehicle[1] != 0) // ms  abs(vehicle[4]-ts)<1500&&
     {
-        Point2f vp(vehicle[0],vehicle[1]);
-        mMavTargetPos[0]=vp.x+mTrackDist*cos(mTrackYaw-CV_PI);
-        mMavTargetPos[1]=vp.y+mTrackDist*sin(mTrackYaw-CV_PI);
-        mMavTargetPos[2]=-(mTrackHeight+0.0);
-        mMavTargetPos[3]=mTrackYaw;
-        mMavTargetPos[4]=ts;
-        mMavTargetPos[5]=1.0;
-        printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n",mMavTargetPos[0],mMavTargetPos[1],mMavTargetPos[2],mMavTargetPos[3]);
-        SendResultControlMav(18,mMavTargetPos[0],mMavTargetPos[1],mMavTargetPos[2],mMavTargetPos[3],80);
-        
+        Point2f vp(vehicle[0], vehicle[1]); // 获取目标车辆的位置信息
+        mMavTargetPos[0] = vp.x + mTrackDist * cos(mTrackYaw - CV_PI);
+        mMavTargetPos[1] = vp.y + mTrackDist * sin(mTrackYaw - CV_PI);
+        mMavTargetPos[2] = -(mTrackHeight + 0.0);
+        mMavTargetPos[3] = mTrackYaw;
+        mMavTargetPos[4] = ts;
+        mMavTargetPos[5] = 1.0;
+        printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n", mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3]);
+        SendResultControlMav(18, mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3], 80);
+
         Point3f pos;
-        int ret=mpSD->GetMavPos(pos);
-        if(0==ret){
-            double dist=cv::norm(Point2d(mMavTargetPos[0]-mpSD->mMavPos[0],mMavTargetPos[1]-mpSD->mMavPos[1]));
-            if(dist<0.2){
+        int ret = mpSD->GetMavPos(pos);
+        if (0 == ret)
+        {
+            double dist = cv::norm(Point2d(mMavTargetPos[0] - mpSD->mMavPos[0], mMavTargetPos[1] - mpSD->mMavPos[1]));
+            // 计算无人机与目标车辆的距离
+            if (dist < 0.2)
+            {
                 return 0;
             }
-            else{
+            else
+            {
                 return -1;
             }
         }
-        else{
+        else
+        {
             return -1;
         }
     }
-    else{
+    else
+    {
         // HGLOG_INFO("GetMavHeight failed!");
         return -1;
     }
@@ -637,15 +674,16 @@ int AlgorithmServer::GotoTargetVehicle()
 
 //TODO:need test
 //ret: 0 GotoNavPoint done,-1 on the way
-int AlgorithmServer::GotoNavPoint()
+int AlgorithmServer::GotoNavPoint() // 暂时没用
 {
-    double ts_c=mpSD->GetTimeMs();
-    printf("ts_c:%f s,mTimeStart:%f s,mTimeStartDelay:%f s,  %f\n",ts_c/1000,mTimeStart/1000,mTimeStartDelay/1000,(mTimeStart+mTimeStartDelay)/1000);
-    if(ts_c<mTimeStart+mTimeStartDelay){
+    double ts_c = mpSD->GetTimeMs();
+    printf("ts_c:%f s,mTimeStart:%f s,mTimeStartDelay:%f s,  %f\n", ts_c / 1000, mTimeStart / 1000, mTimeStartDelay / 1000, (mTimeStart + mTimeStartDelay) / 1000);
+    if (ts_c < mTimeStart + mTimeStartDelay)
+    {
         return -1;
     }
-    //go to target point
-    int ret=GotoTargetVehicle();
+    // go to target point
+    int ret = GotoTargetVehicle();
     return ret;
 }
 
@@ -661,47 +699,46 @@ void AlgorithmServer::SendTrackResultToApp()
     // sendMsgToAppT(m_tfd, sbuf, slen);
 }
 
-float AlgorithmServer::Wrap_pi(float bearing)
+float AlgorithmServer::Wrap_pi(float bearing) // bearing表示待处理的角度值, 将一个角度限制在 -π 到 π 之间，即将角度值限制在半个周期的范围内。
 {
         /* value is inf or NaN */
-        if (!isfinite(bearing)) {
-                return bearing;
+        if (!isfinite(bearing)) 
+        {
+            return bearing;
         }
-
         int c = 0;
-        while (bearing >= CV_PI) {
-                bearing -= CV_2PI;
+        while (bearing >= CV_PI) 
+        {
+            bearing -= CV_2PI;
 
-                if (c++ > 3) {
-                        return NAN;
-                }
+            if (c++ > 3) 
+            {
+                return NAN;
+            }
         }
-
         c = 0;
-        while (bearing < -CV_PI) {
-                bearing += CV_2PI;
-
-                if (c++ > 3) {
-                        return NAN;
-                }
+        while (bearing < -CV_PI) 
+        {
+            bearing += CV_2PI;
+            if (c++ > 3) 
+            {
+                return NAN;
+            }
         }
-
         return bearing;
 }
 
-//speed is cm/s
-void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float z,float yaw, int16_t speed)
+void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float z, float yaw, int16_t speed)
 {
-    //send data to fly control to control mav
     flightctrl_cmd_t msg = {0};
     msg.cmd = cmd;
-    msg.yaw = yaw*57.3*10.0;
-    msg.pos_data[0] = (int32_t)(x*100.0f);
-    msg.pos_data[1] = (int32_t)(y*100.0f);
-    msg.pos_data[2] = (int32_t)(z*100.0f);
+    msg.yaw = yaw * 57.3 * 10.0; // 这里的计算是将弧度转换为以 0.1 度为单位的角度。
+    msg.pos_data[0] = (int32_t)(x * 100.0f);
+    msg.pos_data[1] = (int32_t)(y * 100.0f);
+    msg.pos_data[2] = (int32_t)(z * 100.0f); // 这里乘以 100.0f 是将单位从米转换为厘米。
     int16_t *ptr = (int16_t *)msg.reserve;
     ptr[0] = speed;
-    topic_publish(TOPIC_ID(drone_ctrl_algo), &msg);   
+    topic_publish(TOPIC_ID(drone_ctrl_algo), &msg); // 发布飞控控制消息。
 }
 
 ShareData::ShareData()
