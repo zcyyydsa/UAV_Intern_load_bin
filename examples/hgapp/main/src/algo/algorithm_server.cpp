@@ -606,14 +606,16 @@ void AlgorithmServer::LockTrackCloudPitch()
 //
 int AlgorithmServer::TrackStatusCheck()
 {
-    #if TEST_TRACK_USE_CLOUD||TEST_SINGLE_MAV_TRACK
+#if TEST_TRACK_USE_CLOUD || TEST_SINGLE_MAV_TRACK
     return 0;
-    #endif
-    
-    if(mpSD->mMavIdInited&&mpSD->mHostParamsInited){
+#endif
+
+    if (mpSD->mMavIdInited && mpSD->mHostParamsInited)
+    {
         return 0;
     }
-    else{
+    else
+    {
         return -1;
     }
 }
