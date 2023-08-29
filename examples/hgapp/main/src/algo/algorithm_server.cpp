@@ -676,13 +676,14 @@ int AlgorithmServer::GotoTargetVehicle()
 //ret: 0 GotoNavPoint done,-1 on the way
 int AlgorithmServer::GotoNavPoint() // 暂时没用
 {
-    double ts_c=mpSD->GetTimeMs();
-    printf("ts_c:%f s,mTimeStart:%f s,mTimeStartDelay:%f s,  %f\n",ts_c/1000,mTimeStart/1000,mTimeStartDelay/1000,(mTimeStart+mTimeStartDelay)/1000);
-    if(ts_c<mTimeStart+mTimeStartDelay){
+    double ts_c = mpSD->GetTimeMs();
+    printf("ts_c:%f s,mTimeStart:%f s,mTimeStartDelay:%f s,  %f\n", ts_c / 1000, mTimeStart / 1000, mTimeStartDelay / 1000, (mTimeStart + mTimeStartDelay) / 1000);
+    if (ts_c < mTimeStart + mTimeStartDelay)
+    {
         return -1;
     }
-    //go to target point
-    int ret=GotoTargetVehicle();
+    // go to target point
+    int ret = GotoTargetVehicle();
     return ret;
 }
 
@@ -727,14 +728,14 @@ float AlgorithmServer::Wrap_pi(float bearing) // bearing表示待处理的角度
         return bearing;
 }
 
-void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float z,float yaw, int16_t speed)
+void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float z, float yaw, int16_t speed)
 {
     flightctrl_cmd_t msg = {0};
     msg.cmd = cmd;
-    msg.yaw = yaw*57.3*10.0; // 这里的计算是将弧度转换为以 0.1 度为单位的角度。
-    msg.pos_data[0] = (int32_t)(x*100.0f);
-    msg.pos_data[1] = (int32_t)(y*100.0f);
-    msg.pos_data[2] = (int32_t)(z*100.0f); // 这里乘以 100.0f 是将单位从米转换为厘米。
+    msg.yaw = yaw * 57.3 * 10.0; // 这里的计算是将弧度转换为以 0.1 度为单位的角度。
+    msg.pos_data[0] = (int32_t)(x * 100.0f);
+    msg.pos_data[1] = (int32_t)(y * 100.0f);
+    msg.pos_data[2] = (int32_t)(z * 100.0f); // 这里乘以 100.0f 是将单位从米转换为厘米。
     int16_t *ptr = (int16_t *)msg.reserve;
     ptr[0] = speed;
     topic_publish(TOPIC_ID(drone_ctrl_algo), &msg); // 发布飞控控制消息。
