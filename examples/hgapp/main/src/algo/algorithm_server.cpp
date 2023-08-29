@@ -620,39 +620,38 @@ int AlgorithmServer::TrackStatusCheck()
 
 int AlgorithmServer::MavChangeTrackTarget()
 {
-    mTrackStatus=EXCHANGE_TARGET;
-    return 0;//TODO:code not done
+    mTrackStatus = EXCHANGE_TARGET;
+    return 0; // TODO:code not done
 }
 
-//ret 0 already go to target position
 int AlgorithmServer::GotoTargetVehicle()
 {
-    double ts=mpSD->GetTimeMs();
-    Vec6d vehicle(0,0,0,0,0,0);
-    if(0!=mpSD->GetVehiclePos(vehicle,mTrackVehicleId)) // 获取目标车辆的位置信息
+    double ts = mpSD->GetTimeMs();
+    Vec6d vehicle(0, 0, 0, 0, 0, 0);
+    if (0 != mpSD->GetVehiclePos(vehicle, mTrackVehicleId)) // 获取目标车辆的位置信息
     {
         return -1;
     }
-    printf("GotoTargetVehicle %f    %f,  mTrackVehicleId:%d,vehicle(%f,%f)\n",vehicle[4],ts,mTrackVehicleId,vehicle[0],vehicle[1]);
-    if(vehicle[0]!=0||vehicle[1]!=0)//ms  abs(vehicle[4]-ts)<1500&&
+    printf("GotoTargetVehicle %f    %f,  mTrackVehicleId:%d,vehicle(%f,%f)\n", vehicle[4], ts, mTrackVehicleId, vehicle[0], vehicle[1]);
+    if (vehicle[0] != 0 || vehicle[1] != 0) // ms  abs(vehicle[4]-ts)<1500&&
     {
-        Point2f vp(vehicle[0],vehicle[1]); // 获取目标车辆的位置信息
-        mMavTargetPos[0]=vp.x+mTrackDist*cos(mTrackYaw-CV_PI);
-        mMavTargetPos[1]=vp.y+mTrackDist*sin(mTrackYaw-CV_PI);
-        mMavTargetPos[2]=-(mTrackHeight+0.0);
-        mMavTargetPos[3]=mTrackYaw;
-        mMavTargetPos[4]=ts;
-        mMavTargetPos[5]=1.0;
-        printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n",mMavTargetPos[0],mMavTargetPos[1],mMavTargetPos[2],mMavTargetPos[3]);
-        SendResultControlMav(18,mMavTargetPos[0],mMavTargetPos[1],mMavTargetPos[2],mMavTargetPos[3],80);
-        
+        Point2f vp(vehicle[0], vehicle[1]); // 获取目标车辆的位置信息
+        mMavTargetPos[0] = vp.x + mTrackDist * cos(mTrackYaw - CV_PI);
+        mMavTargetPos[1] = vp.y + mTrackDist * sin(mTrackYaw - CV_PI);
+        mMavTargetPos[2] = -(mTrackHeight + 0.0);
+        mMavTargetPos[3] = mTrackYaw;
+        mMavTargetPos[4] = ts;
+        mMavTargetPos[5] = 1.0;
+        printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n", mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3]);
+        SendResultControlMav(18, mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3], 80);
+
         Point3f pos;
-        int ret=mpSD->GetMavPos(pos);
-        if(0==ret)
+        int ret = mpSD->GetMavPos(pos);
+        if (0 == ret)
         {
-            double dist=cv::norm(Point2d(mMavTargetPos[0]-mpSD->mMavPos[0],mMavTargetPos[1]-mpSD->mMavPos[1]));
+            double dist = cv::norm(Point2d(mMavTargetPos[0] - mpSD->mMavPos[0], mMavTargetPos[1] - mpSD->mMavPos[1]));
             // 计算无人机与目标车辆的距离
-            if(dist<0.2)
+            if (dist < 0.2)
             {
                 return 0;
             }
@@ -730,7 +729,6 @@ float AlgorithmServer::Wrap_pi(float bearing) // bearing表示待处理的角度
 
 void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float z,float yaw, int16_t speed)
 {
-    //send data to fly control to control mav
     flightctrl_cmd_t msg = {0};
     msg.cmd = cmd;
     msg.yaw = yaw*57.3*10.0; // 这里的计算是将弧度转换为以 0.1 度为单位的角度。
