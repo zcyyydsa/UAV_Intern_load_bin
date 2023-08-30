@@ -142,12 +142,16 @@ void AlgorithmServer::TopicSubThread()
                     mpSD->mTrackSend.state=START_SWARM_TRACK;
                     mpSD->mTrackSend.state_status=TRACK_INIT;
                 }
- 
+                int mav_pad_id=-1;
                 for(int i=0;i<MAV_NUM;i++){
                     if(msg_swarm.is_candidate[i]==1){
-                        mpSD->mMavPadId=i;
+                        // mpSD->mMavPadId=i;
+                        mav_pad_id=i;
                         break;
                     }
+                }
+                if(mav_pad_id != mpSD->mMavPadId){
+                    mpSD->mMavPadId=mav_pad_id;
                 }
                 mTrackDist=msg_swarm.track_dist[mpSD->mMavId]/100.0;
                 mTrackHeight=msg_swarm.track_dist[MAV_NUM+mpSD->mMavId]/100.0;
@@ -345,7 +349,7 @@ void AlgorithmServer::TrackThread()
             std::lock_guard<std::mutex> slock(mpSD->mMutexSTD);
             s_state=GOTO_START_POINT;
             mTimeStart=mpSD->GetTimeMs();
-            mTimeStartDelay=float(mpSD->mMavId)*10*1000;
+            mTimeStartDelay=float(mpSD->mMavId)*5*1000;
         }
         if(s_state==GOTO_START_POINT){
             LockTrackCloudPitch();
@@ -537,7 +541,7 @@ void AlgorithmServer::CtlMavToTrack()
     
     t_angle=atan2(y0,x0);
 
-    if(abs(t_angle)>5.0/57.3){
+    if(abs(t_angle)>10.0/57.3){
         yaw=t_angle;
     }
     else{
@@ -699,8 +703,10 @@ void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float 
     msg.pos_data[0] = (int32_t)(x*100.0f);
     msg.pos_data[1] = (int32_t)(y*100.0f);
     msg.pos_data[2] = (int32_t)(z*100.0f);
-    int16_t *ptr = (int16_t *)msg.reserve;
-    ptr[0] = speed;
+    msg.reserve[0] = speed/256;
+    msg.reserve[1] = speed %256;
+    // int16_t *ptr = (int16_t *)msg.reserve;
+    // ptr[0] = speed;
     topic_publish(TOPIC_ID(drone_ctrl_algo), &msg);   
 }
 
