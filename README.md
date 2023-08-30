@@ -129,4 +129,3 @@ python project.py build --release
 * [Kconfiglib](https://github.com/ulfalizer/Kconfiglib)： `Kconfig` `Python` 实现
 
 
-# UAV_Intern_load_bin

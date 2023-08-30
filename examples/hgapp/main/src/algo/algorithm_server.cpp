@@ -142,12 +142,16 @@ void AlgorithmServer::TopicSubThread()
                     mpSD->mTrackSend.state=START_SWARM_TRACK;
                     mpSD->mTrackSend.state_status=TRACK_INIT;
                 }
- 
+                int mav_pad_id=-1;
                 for(int i=0;i<MAV_NUM;i++){
                     if(msg_swarm.is_candidate[i]==1){
-                        mpSD->mMavPadId=i;
+                        // mpSD->mMavPadId=i;
+                        mav_pad_id=i;
                         break;
                     }
+                }
+                if(mav_pad_id != mpSD->mMavPadId){
+                    mpSD->mMavPadId=mav_pad_id;
                 }
                 mTrackDist=msg_swarm.track_dist[mpSD->mMavId]/100.0;
                 mTrackHeight=msg_swarm.track_dist[MAV_NUM+mpSD->mMavId]/100.0;
@@ -346,7 +350,7 @@ void AlgorithmServer::TrackThread()
             std::lock_guard<std::mutex> slock(mpSD->mMutexSTD);
             s_state=GOTO_START_POINT;
             mTimeStart=mpSD->GetTimeMs();
-            mTimeStartDelay=float(mpSD->mMavId)*10*1000;
+            mTimeStartDelay=float(mpSD->mMavId)*5*1000;
         }
         // 如果是运行过程中输入去到起飞点状态，就去到起飞点
         if(s_state==GOTO_START_POINT){
@@ -564,7 +568,7 @@ void AlgorithmServer::CtlMavToTrack()
     float y0 = sin(mTrackYaw - mav_yaw);
     float t_angle;
     t_angle = atan2(y0, x0);       // 计算旋转角度 t_angle，用于调整无人机的偏航角。这里的计算是将无人机的当前偏航角与目标偏航角的差值。
-    if (abs(t_angle) > 5.0 / 57.3) // 如果旋转角度的绝对值大于 5 度（以弧度为单位），将角度差作为目标偏航角，否则将偏航角置为 0,表示无人机不需要调整偏航角。
+    if (abs(t_angle) > 10.0 / 57.3) // 如果旋转角度的绝对值大于 5 度（以弧度为单位），将角度差作为目标偏航角，否则将偏航角置为 0,表示无人机不需要调整偏航角。
     {
         yaw = t_angle;
     }
@@ -736,8 +740,10 @@ void AlgorithmServer::SendResultControlMav(uint8_t cmd, float x, float y, float 
     msg.pos_data[0] = (int32_t)(x * 100.0f);
     msg.pos_data[1] = (int32_t)(y * 100.0f);
     msg.pos_data[2] = (int32_t)(z * 100.0f); // 这里乘以 100.0f 是将单位从米转换为厘米。
-    int16_t *ptr = (int16_t *)msg.reserve;
-    ptr[0] = speed;
+    msg.reserve[0] = speed/256;
+    msg.reserve[1] = speed %256;
+    // int16_t *ptr = (int16_t *)msg.reserve;
+    // ptr[0] = speed;
     topic_publish(TOPIC_ID(drone_ctrl_algo), &msg); // 发布飞控控制消息。
 }
 

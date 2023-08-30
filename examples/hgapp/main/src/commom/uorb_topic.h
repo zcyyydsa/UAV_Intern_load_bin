@@ -53,7 +53,7 @@ typedef struct __drone_ctrl_t
 {
     uint64_t utc;
     uint8_t cmd;
-    int32_t param[4];
+    int32_t param[5];
 } drone_ctrl_t;
 
 typedef struct __media_ctrl_t
