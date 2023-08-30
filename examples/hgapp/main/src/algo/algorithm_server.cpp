@@ -534,6 +534,11 @@ void AlgorithmServer::CtlMavToTrack()
         HGLOG_INFO("Height {} is bigger than MAX_MAV_HEIGHT 4.0!", height);
         height = MAX_MAV_HEIGHT;
     }
+    Point3f pos;
+    mpSD->GetMavPos(pos);
+    float x_car_to_mav = height / tan(mCloudPitch);
+    float x_car = pos.x + x_car_to_mav * cos(mav_yaw);
+    float y_car = pos.y - x_car_to_mav * sin(mav_yaw);
     printf("CtlMavToTrack h:%f, yaw:%f\n", height, mav_yaw);                               // 打印无人机的高度和偏航角
     Point2f pt(mTrackRect.x + mTrackRect.width / 2, mTrackRect.y + mTrackRect.height / 2); // 获取跟踪矩形的中心点
     Point2f im_cen(IMAGE_WIDTH / 2, IMAGE_HEIGHT / 2);                                     // 获取图像的中心点
@@ -640,10 +645,11 @@ int AlgorithmServer::GotoTargetVehicle()
     if (vehicle[0] != 0 || vehicle[1] != 0) // ms  abs(vehicle[4]-ts)<1500&&
     {
         Point2f vp(vehicle[0], vehicle[1]); // 获取目标车辆的位置信息
-        mMavTargetPos[0] = vp.x + mTrackDist * cos(mTrackYaw - CV_PI);
-        mMavTargetPos[1] = vp.y + mTrackDist * sin(mTrackYaw - CV_PI);
+        float theYaw = vehicle[3] + mTrackYaw;
+        mMavTargetPos[0] = vp.x + mTrackDist * cos(theYaw - CV_PI);
+        mMavTargetPos[1] = vp.y + mTrackDist * sin(theYaw - CV_PI);
         mMavTargetPos[2] = -(mTrackHeight + 0.0);
-        mMavTargetPos[3] = mTrackYaw;
+        mMavTargetPos[3] = theYaw;
         mMavTargetPos[4] = ts;
         mMavTargetPos[5] = 1.0;
         printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n", mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3]);
