@@ -357,7 +357,7 @@ void AlgorithmServer::TrackThread()
             LockTrackCloudPitch();
             if(0==GotoNavPoint()){
                 std::lock_guard<std::mutex> slock(mpSD->mMutexSTD);
-                s_state=SWARM_TRACKING;
+                // s_state=SWARM_TRACKING;
             }
             else{
                 continue;
@@ -646,8 +646,8 @@ int AlgorithmServer::GotoTargetVehicle()
     if (vehicle[0] != 0 || vehicle[1] != 0) // ms  abs(vehicle[4]-ts)<1500&&
     {
         Point2f vp(vehicle[0], vehicle[1]); // 获取目标车辆的位置信息
-        mTrackYaw -= CV_PI;
-        float theYaw = vehicle[3] + mTrackYaw;
+        float theYaw = vehicle[3] / 180 * CV_PI + mTrackYaw - CV_PI;
+        printf("theYaw = %f", theYaw);
         mMavTargetPos[0] = vp.x + mTrackDist * cos(theYaw);
         mMavTargetPos[1] = vp.y + mTrackDist * sin(theYaw);
         mMavTargetPos[2] = -(mTrackHeight + 0.0);
