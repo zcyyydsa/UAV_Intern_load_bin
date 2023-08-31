@@ -374,7 +374,7 @@ void AlgorithmServer::TrackThread()
             mMarkers.clear();
             if(mTrackStatus!=EXCHANGE_TARGET)
             {
-                mpDDigital->DetectDigital(mImBGR,mMarkers);
+                mpDDigital->DetectDigital(mImBGR,mMarkers);  // 视觉检测数字, 被藏起来了
             }
             marker_num=mMarkers.size();
             if(marker_num>0)
@@ -382,8 +382,8 @@ void AlgorithmServer::TrackThread()
                 if(mpSD->mMavId==mpSD->mMavPadId && mMarkers.at(0).id==1&&mTrackStatus!=EXCHANGE_TARGET)
                 {
                     mTrackStatus=EXCHANGE_TARGET;
-                    mTrackVehicleId=1-mTrackVehicleId;
-                    /*如果有检测到标记物，并且当前无人机的 ID 与无人机板载 ID 相等，同时第一个检测到的标记物的 ID 为 1，
+                    mTrackVehicleId=1-mTrackVehicleId;  // 0 -> 1; 1 -> 0. 也就是换一个跟踪的车辆
+                    /*如果有检测到标记物，并且当前无人机的 ID 与补位机 ID 相等，同时第一个检测到的标记物的 ID 为 1，
                     且当前跟踪状态不是 EXCHANGE_TARGET，则执行以下操作：
                     将跟踪状态 mTrackStatus 设置为 EXCHANGE_TARGET，表示要切换跟踪目标。
                     切换 mTrackVehicleId 的值，可能是用来表示跟踪的目标车辆的标识。*/
@@ -425,7 +425,7 @@ void AlgorithmServer::TrackThread()
                 if(mTrackStatus==TRACK_RUNNING)
                 {
                     int x=0, y=0, w=0, h=0;
-                    mpTrack->extupdate(im_swarm, IMAGE_WIDTH, IMAGE_HEIGHT, x, y, w, h);
+                    mpTrack->extupdate(im_swarm, IMAGE_WIDTH, IMAGE_HEIGHT, x, y, w, h);  // update x, y, w, h
                     // 更新跟踪目标，输出跟踪框坐标位置
                     printf("x:%d, y:%d, w:%d,h:%d\n",x,y,w,h);
                     if(-1==mpSD->GetMavHeight(mav_height))
@@ -539,6 +539,7 @@ void AlgorithmServer::CtlMavToTrack()
     float x_car_to_mav = height / tan(mCloudPitch);
     float x_car = pos.x + x_car_to_mav * cos(mav_yaw);
     float y_car = pos.y - x_car_to_mav * sin(mav_yaw);
+    printf("Computed car coordinates: x_car = %f, y_car = %f\n", x_car, y_car);            // 打印计算出的小车的坐标
     printf("CtlMavToTrack h:%f, yaw:%f\n", height, mav_yaw);                               // 打印无人机的高度和偏航角
     Point2f pt(mTrackRect.x + mTrackRect.width / 2, mTrackRect.y + mTrackRect.height / 2); // 获取跟踪矩形的中心点
     Point2f im_cen(IMAGE_WIDTH / 2, IMAGE_HEIGHT / 2);                                     // 获取图像的中心点
@@ -645,11 +646,12 @@ int AlgorithmServer::GotoTargetVehicle()
     if (vehicle[0] != 0 || vehicle[1] != 0) // ms  abs(vehicle[4]-ts)<1500&&
     {
         Point2f vp(vehicle[0], vehicle[1]); // 获取目标车辆的位置信息
+        mTrackYaw -= CV_PI;
         float theYaw = vehicle[3] + mTrackYaw;
-        mMavTargetPos[0] = vp.x + mTrackDist * cos(theYaw - CV_PI);
-        mMavTargetPos[1] = vp.y + mTrackDist * sin(theYaw - CV_PI);
+        mMavTargetPos[0] = vp.x + mTrackDist * cos(theYaw);
+        mMavTargetPos[1] = vp.y + mTrackDist * sin(theYaw);
         mMavTargetPos[2] = -(mTrackHeight + 0.0);
-        mMavTargetPos[3] = theYaw;
+        mMavTargetPos[3] = theYaw + CV_PI;
         mMavTargetPos[4] = ts;
         mMavTargetPos[5] = 1.0;
         printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n", mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3]);
@@ -682,9 +684,8 @@ int AlgorithmServer::GotoTargetVehicle()
     }
 }
 
-//TODO:need test
 //ret: 0 GotoNavPoint done,-1 on the way
-int AlgorithmServer::GotoNavPoint() // 暂时没用
+int AlgorithmServer::GotoNavPoint()
 {
     double ts_c = mpSD->GetTimeMs();
     printf("ts_c:%f s,mTimeStart:%f s,mTimeStartDelay:%f s,  %f\n", ts_c / 1000, mTimeStart / 1000, mTimeStartDelay / 1000, (mTimeStart + mTimeStartDelay) / 1000);
