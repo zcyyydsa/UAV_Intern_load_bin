@@ -655,7 +655,7 @@ int AlgorithmServer::GotoTargetVehicle()
         mMavTargetPos[4] = ts;
         mMavTargetPos[5] = 1.0;
         printf("ab x:%.1f,y:%.1f,z:%.1f,yaw:%.1f\n", mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3]);
-        SendResultControlMav(18, mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3], 80);
+        SendResultControlMav(18, mMavTargetPos[0], mMavTargetPos[1], mMavTargetPos[2], mMavTargetPos[3], 157);
 
         Point3f pos;
         int ret = mpSD->GetMavPos(pos);
